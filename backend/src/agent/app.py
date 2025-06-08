@@ -3,9 +3,12 @@ import pathlib
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 import fastapi.exceptions
+from backend.src.agent.graph import graph
+from langgraph.server import add_routes
 
 # Define the FastAPI app
 app = FastAPI()
+add_routes(app, graph, path_prefix="/agent", assistant_id="agent")
 
 
 def create_frontend_router(build_dir="../frontend/dist"):

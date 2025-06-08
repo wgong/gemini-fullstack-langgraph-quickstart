@@ -61,7 +61,7 @@ if prompt := st.chat_input("What would you like to ask?"):
         # The JS SDK constructs: `${apiUrl}/assistants/${assistantId}/threads/${threadId}/stream`
         # So, the URL should be http://localhost:8123/assistants/agent/threads/{thread_id}/stream
 
-        STREAM_URL = f"http://localhost:8123/assistants/{ASSISTANT_ID}/threads/{st.session_state.thread_id}/stream"
+        STREAM_URL = f"http://localhost:8123/agent/assistants/{ASSISTANT_ID}/threads/{st.session_state.thread_id}/stream"
 
         payload = {
             "messages": current_conversation,

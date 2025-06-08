@@ -21,7 +21,7 @@ export default function App() {
     max_research_loops: number;
     reasoning_model: string;
   }>({
-    apiUrl: "http://localhost:8123", // Always use the Docker-exposed port
+    apiUrl: "http://localhost:8123/agent", // Target the /agent path_prefix
     assistantId: "agent",
     messagesKey: "messages",
     onFinish: (event: any) => {
