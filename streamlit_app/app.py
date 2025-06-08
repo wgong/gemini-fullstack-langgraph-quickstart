@@ -80,7 +80,6 @@ if prompt := st.chat_input("What would you like to ask?"):
                         decoded_line = line.decode('utf-8')
                         # SSE format: "data: {JSON_PAYLOAD}
 
-"
                         if decoded_line.startswith("data: "):
                             import json
                             event_data_str = decoded_line[len("data: "):]
