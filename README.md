@@ -47,7 +47,8 @@ pip install .
 
 ```bash
 cd frontend
-npm install
+npm install  # 10.8.2
+npm install -g npm@11.4.1  # upgrade to 11.4.1
 ```
 
 **3. Run Development Servers:**
@@ -82,6 +83,7 @@ _Note: For the docker-compose.yml example you need a LangSmith API key, you can 
 _Note: If you are not running the docker-compose.yml example or exposing the backend server to the public internet, you update the `apiUrl` in the `frontend/src/App.tsx` file your host. Currently the `apiUrl` is set to `http://localhost:8123` for docker-compose or `http://localhost:2024` for development._
 
 **1. Build the Docker Image:**
+   Start Docker Desktop on Ubuntu.
 
    Run the following command from the **project root directory**:
    ```bash
@@ -90,10 +92,14 @@ _Note: If you are not running the docker-compose.yml example or exposing the bac
 **2. Run the Production Server:**
 
    ```bash
-   GEMINI_API_KEY=<your_gemini_api_key> LANGSMITH_API_KEY=<your_langsmith_api_key> docker-compose up
+   export GEMINI_API_KEY=<your_gemini_api_key> 
+   export LANGSMITH_API_KEY=<your_langsmith_api_key> 
+   docker compose up
    ```
 
 Open your browser and navigate to `http://localhost:8123/app/` to see the application. The API will be available at `http://localhost:8123`.
+
+In LangSmith Studio, enter `http://localhost:8123` and connect
 
 ## Technologies Used
 

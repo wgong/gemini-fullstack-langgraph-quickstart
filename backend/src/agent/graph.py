@@ -32,6 +32,7 @@ from agent.utils import (
 )
 
 load_dotenv()
+# API keys are set as environment variables
 
 if os.getenv("GEMINI_API_KEY") is None:
     raise ValueError("GEMINI_API_KEY is not set")
