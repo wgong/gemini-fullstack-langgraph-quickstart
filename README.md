@@ -90,10 +90,18 @@ _Note: If you are not running the docker-compose.yml example or exposing the bac
 **2. Run the Production Server:**
 
    ```bash
-   GEMINI_API_KEY=<your_gemini_api_key> LANGSMITH_API_KEY=<your_langsmith_api_key> docker-compose up
+   export GEMINI_API_KEY=<your_gemini_api_key>
+   export LANGSMITH_API_KEY=<your_langsmith_api_key> 
+   docker compose up
+
+   docker compose down && docker compose up --build 
    ```
 
 Open your browser and navigate to `http://localhost:8123/app/` to see the application. The API will be available at `http://localhost:8123`.
+
+
+monitor `LangGraph Studio` at https://smith.langchain.com/studio/thread?baseUrl=http%3A%2F%2Flocalhost%3A8123&mode=graph&assistantId=fe096781-5601-53d2-b2f6-0d3403f7e9ca&threadId=7f281acc-c246-4a24-8070-20a3c2199d51
+
 
 ## Technologies Used
 

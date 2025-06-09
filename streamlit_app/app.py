@@ -30,22 +30,39 @@ if prompt := st.chat_input("What would you like to ask?"):
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
-
+        
         # Prepare the input for the LangGraph SDK stream
         # Based on the Vue frontend, the input is a list of messages
         # with 'type' and 'content' and 'id'
         # The backend app.py for useStream expects an 'input' key with 'messages'
-
+        
         # Construct the current conversation messages in the format expected by the backend
         # The Vue app sends all messages, so we'll do the same.
         current_conversation = []
         for msg in st.session_state.messages:
-            role_type = "human" if msg["role"] == "user" else "ai"
-            current_conversation.append({
-                "type": role_type,
-                "content": msg["content"],
-                "id": str(uuid.uuid4()) # Generate unique IDs for messages
-             })
+            message_id = str(uuid.uuid4()) # Generate a consistent ID for each message if it doesn't have one
+            if msg["role"] == "user":
+                current_conversation.append({
+                    "type": "human",
+                    "content": msg["content"],
+                    "id": message_id,
+                    "additional_kwargs": {},
+                    "response_metadata": {},
+                    "name": None,
+                    "example": False
+                })
+            elif msg["role"] == "assistant":
+                current_conversation.append({
+                    "type": "ai",
+                    "content": msg["content"],
+                    "id": message_id,
+                    "additional_kwargs": {},
+                    "response_metadata": {},
+                    "name": None,
+                    "example": False 
+                    # Note: This is a simplified AI message. If 422 persists, 
+                    # we might need the full complex structure from the Vue trace for AI messages.
+                })
 
         # The useStream hook in the frontend sends a more complex object.
         # For a direct HTTP call, we need to know the exact API schema.
@@ -56,55 +73,57 @@ if prompt := st.chat_input("What would you like to ask?"):
         # The backend's app.py uses:
         # graph = get_app(assistant_id=assistant_id, thread_id=thread_id)
         # And the langgraph.json shows assistant_id="agent"
-
+        
         # Let's try to mimic the JS SDK's stream endpoint structure if possible.
         # The JS SDK constructs: `${apiUrl}/assistants/${assistantId}/threads/${threadId}/stream`
         # So, the URL should be http://localhost:8123/assistants/agent/threads/{thread_id}/stream
+        
+        ENDPOINT_URL = "http://localhost:8123/invoke_agent"
 
-        STREAM_URL = f"http://localhost:8123/agent/assistants/{ASSISTANT_ID}/threads/{st.session_state.thread_id}/stream"
-
-        payload = {
+        # Construct the input dictionary based on OverallState fields
+        graph_input = {
             "messages": current_conversation,
-            # Adding other parameters from Vue App's handleSubmit, with defaults
             "initial_search_query_count": 3, # Defaulting to medium effort
             "max_research_loops": 3,        # Defaulting to medium effort
             "reasoning_model": "gemini-2.5-flash-preview-04-17" # Default model
         }
-
+        payload_to_send = {
+            "input": graph_input,
+            "configurable": {
+                "thread_id": str(uuid.uuid4()) # New thread_id for each call
+            }
+        }
+        
         try:
-            # Using stream=True for server-sent events (SSE)
-            with requests.post(STREAM_URL, json={"input": payload}, stream=True, timeout=300) as response:
-                response.raise_for_status() # Raise an exception for bad status codes
-                for line in response.iter_lines():
-                    if line:
-                        decoded_line = line.decode('utf-8')
-                        # SSE format: "data: {JSON_PAYLOAD}
+            response = requests.post(ENDPOINT_URL, json=payload_to_send, timeout=300) # Increased timeout
+            response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
+            
+            response_json = response.json()
+            # Assuming the response_json is the final graph state (OverallState)
+            # Extract the last AI message
+            ai_messages_in_response = [m for m in response_json.get("messages", []) if m.get("type") == "ai"]
+            if ai_messages_in_response:
+                full_response = ai_messages_in_response[-1].get("content", "No content found in AI message.")
+            else:
+                full_response = "No AI message found in the response."
+            
+            message_placeholder.markdown(full_response) # Display the full response
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-                        if decoded_line.startswith("data: "):
-                            import json
-                            event_data_str = decoded_line[len("data: "):]
-                            try:
-                                event_data = json.loads(event_data_str)
-                                # Assuming the streamed response for messages is in a list
-                                # and the actual AI message content is in the last message of type 'ai'.
-                                if isinstance(event_data, list) and event_data:
-                                    ai_messages = [m for m in event_data if m.get("type") == "ai"]
-                                    if ai_messages:
-                                        # Get the content of the latest AI message
-                                        full_response = ai_messages[-1].get("content", "")
-                                        message_placeholder.markdown(full_response + "▌")
-                            except json.JSONDecodeError:
-                                # Handle cases where a line might not be full JSON (e.g., control messages)
-                                pass # Or log this if needed
-
-                message_placeholder.markdown(full_response)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-
+        except requests.exceptions.HTTPError as http_err:
+            st.error(f"HTTP error occurred: {http_err} - {response.text}")
+            full_response = f"Sorry, an HTTP error occurred: {http_err}."
+            message_placeholder.markdown(full_response)
+            # Optionally add to chat history: st.session_state.messages.append({"role": "assistant", "content": full_response})
         except requests.exceptions.RequestException as e:
             st.error(f"Error connecting to LangGraph backend: {e}")
-            full_response = "Sorry, I couldn't connect to the backend."
+            full_response = f"Sorry, I couldn't connect to the backend: {e}."
             message_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            # Optionally add to chat history: st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except Exception as e: # Catch any other errors like JSONDecodeError if response is not JSON
+            st.error(f"An unexpected error occurred: {e}")
+            full_response = f"An unexpected error occurred processing the response: {e}."
+            message_placeholder.markdown(full_response)
 
 # Add a clear history button
 if st.button("Clear Chat History"):

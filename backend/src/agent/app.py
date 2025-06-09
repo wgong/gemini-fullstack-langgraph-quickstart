@@ -1,10 +1,12 @@
 # mypy: disable - error - code = "no-untyped-def,misc"
 import pathlib
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
 import fastapi.exceptions
 from backend.src.agent.graph import graph
 from langgraph.server import add_routes
+from pydantic import BaseModel
+from typing import Optional, Dict, Any # List is not used in the new model/route
 
 # Define the FastAPI app
 app = FastAPI()

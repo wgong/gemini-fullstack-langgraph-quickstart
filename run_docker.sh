@@ -1,0 +1,1 @@
+docker compose -f docker-compose-u8hi.yml up --build
